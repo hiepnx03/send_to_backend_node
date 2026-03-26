@@ -106,12 +106,57 @@ class PromptAugmenter:
         
         return (combined, first)
 
+class NSFWDetectorNode:
+    def __init__(self):
+        self.pipe = None
+
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "image": ("IMAGE",),
+                "threshold": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.01}),
+            }
+        }
+
+    RETURN_TYPES = ("BOOLEAN", "FLOAT", "STRING")
+    RETURN_NAMES = ("is_nsfw", "score", "label")
+    FUNCTION = "detect"
+    CATEGORY = "Vision"
+
+    def detect(self, image, threshold):
+        try:
+            from transformers import pipeline
+            if self.pipe is None:
+                self.pipe = pipeline("image-classification", model="Falconsai/nsfw_image_detection")
+        except ImportError:
+            return (False, 0.0, "Error: transformers not installed")
+        except Exception as e:
+            return (False, 0.0, f"Error: {str(e)}")
+
+        img_np = 255. * image[0].cpu().numpy()
+        img_pil = Image.fromarray(img_np.astype(np.uint8))
+        
+        results = self.pipe(img_pil)
+        
+        nsfw_score = 0.0
+        label = "normal"
+        for res in results:
+            if res['label'] == 'nsfw':
+                nsfw_score = res['score']
+                label = "nsfw" if nsfw_score > threshold else "normal"
+                break
+        
+        return (nsfw_score > threshold, nsfw_score, label)
+
 NODE_CLASS_MAPPINGS = {
     "ImageToText": ImageToText,
-    "PromptAugmenter": PromptAugmenter
+    "PromptAugmenter": PromptAugmenter,
+    "NSFWDetectorNode": NSFWDetectorNode
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "ImageToText": "AI Image to Prompt (BLIP)",
-    "PromptAugmenter": "Creative Prompt Variation (N)"
+    "PromptAugmenter": "Creative Prompt Variation (N)",
+    "NSFWDetectorNode": "AI Safety Guard (NSFW Detector)"
 }

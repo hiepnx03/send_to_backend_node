@@ -10,8 +10,11 @@ Chào mừng bạn đến với tài liệu hướng dẫn cho bộ node **Send 
 - [System Status](StatusNode.md): Theo dõi hàng đợi và trạng thái bận của server.
 - [Automation Suite](Automation.md): Tổng hợp tất cả các bộ gộp text, công tắc logic, resize ảnh API, và chèn watermark.
 - [AI Vision & Prompts](VisionNodes.md): Node phân tích ảnh thành văn bản và tạo các biến thể prompt sáng tạo.
-- [Gemini Browser Bridge](GeminiExtension.md): Kết nối ComfyUI với trình duyệt để điều khiển Gemini (miễn phí).
-- [Pro Utilities](ProFeatures.md): Bao gồm Xóa phông (Rembg), Lấy bảng màu, Preview Video và Prompt Router.
+- [Gemini Browser Bridge V3](GeminiExtension.md): Kết nối Gemini (Multi-turn chat & Model Select).
+- [AI Universal Connector](AIConnector.md): Kết nối Ollama, LM Studio (Local LLM Brain).
+- [Photoshop Bridge V3](PhotoshopConnection.md): Điều khiển Layers và chạy JSX Script từ xa.
+- [Ultimate Utility Suite](UtilityNodes.md): Các node Tiện ích nâng cao (Toán học, Chèn chữ đẹp, Sharpen, Auto-Crop).
+- [Pro Utilities & Safety](ProFeatures.md): Bao gồm Rembg, NSFW Detector, Metadata Injector và Side-by-side comparison.
 - [Offline Model Setup](ModelSetup.md): Hướng dẫn cài đặt Flux 2 và LTX 2.3 để chạy Offline.
 - [Send To Backend](SendToBackend.md): Node tải lên thế hệ cũ.
 

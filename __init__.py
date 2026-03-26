@@ -88,6 +88,9 @@ from .node.vision import NODE_CLASS_MAPPINGS as vision_node, NODE_DISPLAY_NAME_M
 from .node.extension_bridge import NODE_CLASS_MAPPINGS as extension_node, NODE_DISPLAY_NAME_MAPPINGS as extension_dis
 from .node.image_utils import NODE_CLASS_MAPPINGS as image_node, NODE_DISPLAY_NAME_MAPPINGS as image_dis
 from .node.video_utils import NODE_CLASS_MAPPINGS as video_node, NODE_DISPLAY_NAME_MAPPINGS as video_dis
+from .node.photoshop_bridge import NODE_CLASS_MAPPINGS as ps_node, NODE_DISPLAY_NAME_MAPPINGS as ps_dis
+from .node.llm_utils import NODE_CLASS_MAPPINGS as llm_node, NODE_DISPLAY_NAME_MAPPINGS as llm_dis
+from .node.utility_nodes import NODE_CLASS_MAPPINGS as util_node, NODE_DISPLAY_NAME_MAPPINGS as util_dis
 
 NODE_CLASS_MAPPINGS = {
     **backend_node,
@@ -98,7 +101,10 @@ NODE_CLASS_MAPPINGS = {
     **vision_node,
     **extension_node,
     **image_node,
-    **video_node
+    **video_node,
+    **ps_node,
+    **llm_node,
+    **util_node
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -110,7 +116,10 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     **vision_dis,
     **extension_dis,
     **image_dis,
-    **video_dis
+    **video_dis,
+    **ps_dis,
+    **llm_dis,
+    **util_dis
 }
 
 __all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS']

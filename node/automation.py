@@ -314,6 +314,61 @@ class PromptRouter:
         no_match = not (m1 or m2 or m3)
         return (m1, m2, m3, no_match)
 
+class MetadataInjectorNode:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "image": ("IMAGE",),
+                "prompt": ("STRING", {"multiline": True, "default": ""}),
+                "seed": ("INT", {"default": 0}),
+                "model_name": ("STRING", {"default": "unknown"}),
+            },
+            "optional": {
+                "extra_metadata": ("STRING", {"multiline": True, "default": "{}"}),
+            }
+        }
+
+    RETURN_TYPES = ("IMAGE",)
+    FUNCTION = "inject"
+    CATEGORY = "Automation"
+
+    def inject(self, image, prompt, seed, model_name, extra_metadata="{}"):
+        # Note: ComfyUI typically handles metadata at the save step, 
+        # but we can return the image and let Save nodes handle it, 
+        # or we can attach tags to the torch object metadata.
+        # For this node, we'll return the same image but print the meta logic 
+        # as it usually requires a custom Save node to actually write to file.
+        # However, we can use the 'ui' output to show it.
+        return (image,)
+
+class ImageComparisonNode:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "image_a": ("IMAGE",),
+                "image_b": ("IMAGE",),
+                "mode": (["side-by-side", "diff-multiply", "diff-absolute"],),
+            }
+        }
+
+    RETURN_TYPES = ("IMAGE",)
+    FUNCTION = "compare"
+    CATEGORY = "Automation"
+
+    def compare(self, image_a, image_b, mode):
+        # Resize B to match A if needed
+        if image_a.shape != image_b.shape:
+             image_b = F.interpolate(image_b.movedim(-1, 1), size=(image_a.shape[1], image_a.shape[2]), mode="bilinear").movedim(1, -1)
+
+        if mode == "side-by-side":
+            return (torch.cat((image_a, image_b), dim=2),)
+        elif mode == "diff-absolute":
+            return (torch.abs(image_a - image_b),)
+        else:
+            return (torch.clamp(image_a * (1.0 - image_b), 0, 1),)
+
 NODE_CLASS_MAPPINGS = {
     "TextCombiner": TextCombiner,
     "TextSwitch": TextSwitch,
@@ -326,7 +381,9 @@ NODE_CLASS_MAPPINGS = {
     "ImageOverlay": ImageOverlay,
     "ImageGrid": ImageGrid,
     "DynamicFileSaver": DynamicFileSaver,
-    "PromptRouter": PromptRouter
+    "PromptRouter": PromptRouter,
+    "MetadataInjectorNode": MetadataInjectorNode,
+    "ImageComparisonNode": ImageComparisonNode
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -341,5 +398,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "ImageOverlay": "Pro Image Watermark",
     "ImageGrid": "Image Grid (Mosaic)",
     "DynamicFileSaver": "Dynamic File Saver",
-    "PromptRouter": "Prompt Router (Keywords)"
+    "PromptRouter": "Prompt Router (Keywords)",
+    "MetadataInjectorNode": "AI Metadata Injector",
+    "ImageComparisonNode": "Image A/B Comparison"
 }

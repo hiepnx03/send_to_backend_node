@@ -65,34 +65,40 @@ function waitForResponse(prompt_id) {
 
 chrome.runtime.onMessage.addListener(async (request) => {
     if (request.type === "gemini_request") {
-        console.log("Processing request:", request.prompt_id);
+        console.log("Processing VIP Request:", request.prompt_id);
         
+        // 1. Chuyển Model nếu cần (Giả lập click UI nếu muốn, hoặc chỉ nhắc user)
+        // Hiện tại Gemini Web không có API trực tiếp để đổi model qua URL mà không load lại trang,
+        // nên chúng ta sẽ ưu tiên gửi kèm history vào prompt.
+
         const inputArea = document.querySelector('[contenteditable="true"]') || 
                           document.querySelector('textarea[placeholder*="Gemini"]');
         
-        if (!inputArea) {
-            console.error("Input area not found!");
-            return;
-        }
+        if (!inputArea) return;
 
-        // 1. Upload ảnh nếu có
+        // 2. Xử lý ảnh
         if (request.image_base64) {
              await pasteImage(request.image_base64, inputArea);
-             await new Promise(r => setTimeout(r, 1000)); // Chờ ảnh load
+             await new Promise(r => setTimeout(r, 1000));
         }
 
-        // 2. Nhập Prompt
-        inputArea.innerText = request.prompt;
+        // 3. Xây dựng Prompt kèm History
+        let finalPrompt = request.prompt;
+        if (request.history) {
+            finalPrompt = `Dưới đây là lịch sử hội thoại trước đó để tham khảo:\n${request.history}\n\nCâu hỏi mới: ${request.prompt}`;
+        }
+
+        inputArea.innerText = finalPrompt;
         inputArea.dispatchEvent(new Event('input', { bubbles: true }));
 
-        // 3. Ấn gửi
+        // 4. Gửi
         setTimeout(() => {
             const sendButton = document.querySelector('button[aria-label="Send message"]') || 
                                document.querySelector('.send-button');
             if (sendButton) sendButton.click();
         }, 500);
 
-        // 4. Đợi phản hồi thông minh
+        // 5. Đợi phản hồi
         const responseText = await waitForResponse(request.prompt_id);
         
         chrome.runtime.sendMessage({
