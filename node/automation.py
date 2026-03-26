@@ -282,6 +282,38 @@ class DynamicFileSaver:
             results.append(file_path)
         return (", ".join(results),)
 
+class PromptRouter:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "text": ("STRING", {"multiline": True, "default": "a portrait of a cat"}),
+                "keywords_1": ("STRING", {"default": "portrait, face, person"}),
+                "keywords_2": ("STRING", {"default": "landscape, nature, mountain"}),
+                "keywords_3": ("STRING", {"default": "video, motion, animation"}),
+            }
+        }
+
+    RETURN_TYPES = ("BOOLEAN", "BOOLEAN", "BOOLEAN", "BOOLEAN")
+    RETURN_NAMES = ("match_1", "match_2", "match_3", "no_match")
+    FUNCTION = "route"
+    CATEGORY = "Automation"
+
+    def route(self, text, keywords_1, keywords_2, keywords_3):
+        text = text.lower()
+        
+        def check(kw_str):
+            if not kw_str: return False
+            kws = [k.strip().lower() for k in kw_str.split(",")]
+            return any(k in text for k in kws if k)
+
+        m1 = check(keywords_1)
+        m2 = check(keywords_2)
+        m3 = check(keywords_3)
+        
+        no_match = not (m1 or m2 or m3)
+        return (m1, m2, m3, no_match)
+
 NODE_CLASS_MAPPINGS = {
     "TextCombiner": TextCombiner,
     "TextSwitch": TextSwitch,
@@ -293,7 +325,8 @@ NODE_CLASS_MAPPINGS = {
     "TextReplacer": TextReplacer,
     "ImageOverlay": ImageOverlay,
     "ImageGrid": ImageGrid,
-    "DynamicFileSaver": DynamicFileSaver
+    "DynamicFileSaver": DynamicFileSaver,
+    "PromptRouter": PromptRouter
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -307,5 +340,6 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "TextReplacer": "Text Replacer (API)",
     "ImageOverlay": "Pro Image Watermark",
     "ImageGrid": "Image Grid (Mosaic)",
-    "DynamicFileSaver": "Dynamic File Saver"
+    "DynamicFileSaver": "Dynamic File Saver",
+    "PromptRouter": "Prompt Router (Keywords)"
 }

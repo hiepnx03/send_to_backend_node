@@ -11,8 +11,12 @@ Chào mừng bạn đến với tài liệu hướng dẫn cho bộ node **Send 
 - [Automation Suite](Automation.md): Tổng hợp tất cả các bộ gộp text, công tắc logic, resize ảnh API, và chèn watermark.
 - [AI Vision & Prompts](VisionNodes.md): Node phân tích ảnh thành văn bản và tạo các biến thể prompt sáng tạo.
 - [Gemini Browser Bridge](GeminiExtension.md): Kết nối ComfyUI với trình duyệt để điều khiển Gemini (miễn phí).
+- [Pro Utilities](ProFeatures.md): Bao gồm Xóa phông (Rembg), Lấy bảng màu, Preview Video và Prompt Router.
 - [Offline Model Setup](ModelSetup.md): Hướng dẫn cài đặt Flux 2 và LTX 2.3 để chạy Offline.
 - [Send To Backend](SendToBackend.md): Node tải lên thế hệ cũ.
+
+## API Dashboard
+Truy cập giao diện quản lý tại: `http://localhost:8188/api/v1/dashboard` để xem trạng thái server và test workflow.
 
 ## Bắt Đầu
 Xem hướng dẫn cài đặt và sử dụng tổng quát tại [Walkthrough](../walkthrough.md).

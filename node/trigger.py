@@ -184,9 +184,98 @@ if hasattr(server.PromptServer, "instance"):
     server.PromptServer.instance.add_on_prompt_handler(register_workflow_handler)
 
     @server.PromptServer.instance.routes.get("/api/v1/workflows")
-    async def api_list_workflows(request):
-        files = [f[:-5] for f in os.listdir(WORKFLOWS_DIR) if f.endswith(".json")]
-        return web.json_response({"workflows": files})
+    async def get_workflows_handler(request):
+        workflow_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "workflows")
+        if not os.path.exists(workflow_dir):
+            return web.json_response({"workflows": []})
+        
+        workflows = [f.replace(".json", "") for f in os.listdir(workflow_dir) if f.endswith(".json")]
+        return web.json_response({"workflows": workflows})
+
+    @server.PromptServer.instance.routes.get("/api/v1/dashboard")
+    async def dashboard_handler(request):
+        import psutil
+        # 1. Get workflows
+        workflow_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "workflows")
+        workflows = []
+        if os.path.exists(workflow_dir):
+            workflows = [f.replace(".json", "") for f in os.listdir(workflow_dir) if f.endswith(".json")]
+        
+        # 2. Get status
+        cpu = psutil.cpu_percent()
+        ram = psutil.virtual_memory().percent
+        vram_percent = 0
+        if torch.cuda.is_available():
+            vram_percent = torch.cuda.memory_reserved(0) / torch.cuda.get_device_properties(0).total_memory * 100
+
+        # ... (rest of html)
+
+        # 3. HTML Template
+        html = f"""
+        <!DOCTYPE html>
+        <html lang="vi">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>ComfyUI API Dashboard</title>
+            <style>
+                body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f0f0f; color: #e0e0e0; margin: 0; padding: 20px; }}
+                .container {{ max-width: 900px; margin: auto; }}
+                .header {{ display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #333; padding-bottom: 15px; margin-bottom: 30px; }}
+                h1 {{ margin: 0; color: #00d2ff; font-weight: 300; letter-spacing: 1px; }}
+                .card {{ background: #1a1a1a; padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #333; }}
+                h2 {{ margin-top: 0; font-size: 1.2rem; color: #888; text-transform: uppercase; letter-spacing: 2px; }}
+                .stat-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }}
+                .stat {{ background: #222; padding: 20px; border-radius: 10px; text-align: center; border-bottom: 4px solid #00d2ff; }}
+                .stat div {{ font-size: 0.9rem; color: #aaa; margin-bottom: 5px; }}
+                .stat strong {{ font-size: 2rem; color: #fff; }}
+                .workflow-list {{ list-style: none; padding: 0; margin: 0; }}
+                .workflow-item {{ background: #222; padding: 15px 20px; margin-bottom: 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; transition: transform 0.2s; border: 1px solid transparent; }}
+                .workflow-item:hover {{ transform: translateX(5px); border-color: #00d2ff; background: #282828; }}
+                .workflow-name {{ font-weight: 500; font-size: 1.1rem; }}
+                .actions {{ display: flex; gap: 10px; }}
+                .btn {{ text-decoration: none; padding: 8px 18px; border-radius: 6px; font-size: 0.9rem; font-weight: 600; cursor: pointer; border: none; transition: 0.3s; }}
+                .btn-primary {{ background: linear-gradient(135deg, #0082c8, #00d2ff); color: #fff; }}
+                .btn-primary:hover {{ opacity: 0.9; box-shadow: 0 4px 15px rgba(0, 210, 255, 0.4); }}
+                .badge {{ background: #333; color: #00d2ff; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>ANTIGRAVITY <span style="color:#444">|</span> API DASHBOARD</h1>
+                    <div class="badge">Server Online</div>
+                </div>
+                
+                <div class="card">
+                    <h2>System Metrics</h2>
+                    <div class="stat-grid">
+                        <div class="stat"><div>CPU USAGE</div><strong>{cpu}%</strong></div>
+                        <div class="stat"><div>RAM USAGE</div><strong>{ram}%</strong></div>
+                        <div class="stat"><div>VRAM RESERVED</div><strong>{vram_percent:.1f}%</strong></div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>Registered Workflows <span style="float:right; font-size: 0.8rem; color: #555">{len(workflows)} units</span></h2>
+                    <ul class="workflow-list">
+                        {"".join([f'''
+                        <li class="workflow-item">
+                            <span class="workflow-name">{wf}</span>
+                            <div class="actions">
+                                <a href="/api/v1/trigger?workflow={wf}" class="btn btn-primary" target="_blank">Test Trigger</a>
+                            </div>
+                        </li>
+                        ''' for wf in workflows])}
+                    </ul>
+                </div>
+                
+                <p style="text-align: center; color: #444; font-size: 0.8rem;">ComfyUI API Suite &bull; Advanced Automation</p>
+            </div>
+        </body>
+        </html>
+        """
+        return web.Response(text=html, content_type='text/html')
 
     @server.PromptServer.instance.routes.post("/api/v1/trigger")
     async def api_v1_trigger(request):

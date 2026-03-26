@@ -86,6 +86,8 @@ from .node.webhook import NODE_CLASS_MAPPINGS as webhook_node, NODE_DISPLAY_NAME
 from .node.automation import NODE_CLASS_MAPPINGS as automation_node, NODE_DISPLAY_NAME_MAPPINGS as automation_dis
 from .node.vision import NODE_CLASS_MAPPINGS as vision_node, NODE_DISPLAY_NAME_MAPPINGS as vision_dis
 from .node.extension_bridge import NODE_CLASS_MAPPINGS as extension_node, NODE_DISPLAY_NAME_MAPPINGS as extension_dis
+from .node.image_utils import NODE_CLASS_MAPPINGS as image_node, NODE_DISPLAY_NAME_MAPPINGS as image_dis
+from .node.video_utils import NODE_CLASS_MAPPINGS as video_node, NODE_DISPLAY_NAME_MAPPINGS as video_dis
 
 NODE_CLASS_MAPPINGS = {
     **backend_node,
@@ -94,7 +96,9 @@ NODE_CLASS_MAPPINGS = {
     **webhook_node,
     **automation_node,
     **vision_node,
-    **extension_node
+    **extension_node,
+    **image_node,
+    **video_node
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -104,7 +108,9 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     **webhook_dis,
     **automation_dis,
     **vision_dis,
-    **extension_dis
+    **extension_dis,
+    **image_dis,
+    **video_dis
 }
 
 __all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS']

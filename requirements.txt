@@ -6,3 +6,6 @@ requests
 aiohttp
 transformers
 psutil
+opencv-python
+rembg
+scikit-learn
