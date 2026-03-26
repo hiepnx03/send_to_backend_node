@@ -1,0 +1,8 @@
+torch
+numpy
+torch
+Pillow
+requests
+aiohttp
+transformers
+psutil

@@ -1,74 +1,110 @@
-import torch
-import numpy as np
-from PIL import Image
-import requests
-import io
-import os
-import json
+import subprocess
+import sys, os
+import platform, urllib.request, zipfile, shutil
 
-class SendToBackend:
-    @classmethod
-    def INPUT_TYPES(s):
-        return {
-            "required": {
-                "images": ("IMAGE",),
-                "backend_url": ("STRING", {"default": "http://apiprompt.nauan.click"}),
-                "category_id": ("INT", {"default": 1, "min": 1, "max": 1000, "step": 1}),
-                "workflow_id": ("INT", {"default": 1, "min": 1, "max": 1000, "step": 1}),
-            },
-            "optional": {
-                "prompt_text": ("STRING", {"multiline": True, "default": ""}),
-            }
-        }
+# 1. Dependency check and installation logic (from user sample)
+def ensure_aria2_installed():
+    system = platform.system().lower()
+    if system == "windows":
+        try:
+            subprocess.run(["aria2c", "--version"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            return
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            print("⚠️ aria2c not found. Installing...")
 
-    RETURN_TYPES = ("IMAGE",)
-    OUTPUT_NODE = True
-    FUNCTION = "send_images"
-    CATEGORY = "Backend"
+        aria2_url = "https://github.com/aria2/aria2/releases/download/release-1.36.0/aria2-1.36.0-win-64bit-build1.zip"
+        temp_zip = os.path.join(os.environ["TEMP"], "aria2.zip")
+        install_dir = os.path.join(os.path.dirname(__file__), "bin", "aria2")
 
-    def send_images(self, images, backend_url, category_id, workflow_id, prompt_text=""):
-        results = []
+        try:
+            urllib.request.urlretrieve(aria2_url, temp_zip)
+            if os.path.exists(install_dir):
+                shutil.rmtree(install_dir)
+            with zipfile.ZipFile(temp_zip, 'r') as zip_ref:
+                zip_ref.extractall(install_dir)
+            os.environ["PATH"] += os.pathsep + install_dir
+            print("✅ aria2c installed successfully!")
+        except Exception as e:
+            print("❌ Failed to install aria2c:", e)
+    elif system == "linux":
+        try:
+            subprocess.check_call(["sudo", "apt", "install", "-y", "fonts-jetbrains-mono"])
+        except Exception as e:
+            print("❌ Error installing Linux dependencies:", e)
+
+# ensure_aria2_installed() # Optional: Uncomment if you need it
+
+def check_pip(package_name):
+    try:
+        subprocess.run(
+            [sys.executable, "-m", "pip", "show", package_name],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+        return True
+    except subprocess.CalledProcessError:
+        return False
+    
+def install():
+    file_check = os.path.join(os.path.dirname(__file__), "installed.txt")
+    list_check = os.path.join(os.path.dirname(__file__), "requirements.txt")
+    
+    if not os.path.exists(list_check):
+        return
+
+    expected_content = ""
+    with open(list_check, 'r', encoding='utf-8') as file:
+        expected_content = file.read()
+    
+    installed_content = ""
+    if os.path.exists(file_check):
+        with open(file_check, 'r', encoding='utf-8') as file:
+            installed_content = file.read()
+            
+    if installed_content != expected_content:
+        list_package = expected_content.splitlines()
+        for package_name in list_package:
+            package_name = package_name.strip()
+            if package_name and not package_name.startswith("#"):
+                if not check_pip(package_name):
+                    print(f"Installing missing dependency: {package_name}")
+                    subprocess.check_call([sys.executable, "-m", "pip", "install", package_name])
         
-        for image in images:
-            # Convert torch tensor to PIL image
-            i = 255. * image.cpu().numpy()
-            img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
-            
-            # Save PIL image to bytes
-            byte_io = io.BytesIO()
-            img.save(byte_io, format='PNG')
-            byte_io.seek(0)
-            
-            # 1. Upload to /api/upload
-            try:
-                files = {'files': ('image.png', byte_io, 'image/png')}
-                upload_resp = requests.post(f"{backend_url}/api/upload", files=files)
-                upload_resp.raise_for_status()
-                upload_data = upload_resp.json()
-                image_path = upload_data['paths'][0]
-                print(f"Uploaded image to: {image_path}")
-                
-                # 2. Add to /api/prompts/add
-                prompt_data = {
-                    "prompt": prompt_text,
-                    "image": image_path,
-                    "categoryId": category_id,
-                    "workflowId": workflow_id,
-                    "media": [image_path]
-                }
-                add_resp = requests.post(f"{backend_url}/api/prompts/add", json=prompt_data)
-                add_resp.raise_for_status()
-                print(f"Added prompt entry to backend.")
-                
-            except Exception as e:
-                print(f"Error sending to backend: {e}")
+        with open(file_check, "w", encoding='utf-8') as file:
+            file.write(expected_content)
 
-        return (images,)
+# Start installation
+install()
+
+# 2. Node imports
+from .node.backend import NODE_CLASS_MAPPINGS as backend_node, NODE_DISPLAY_NAME_MAPPINGS as backend_dis
+from .node.trigger import NODE_CLASS_MAPPINGS as trigger_node, NODE_DISPLAY_NAME_MAPPINGS as trigger_dis
+from .node.status import NODE_CLASS_MAPPINGS as status_node, NODE_DISPLAY_NAME_MAPPINGS as status_dis
+from .node.webhook import NODE_CLASS_MAPPINGS as webhook_node, NODE_DISPLAY_NAME_MAPPINGS as webhook_dis
+from .node.automation import NODE_CLASS_MAPPINGS as automation_node, NODE_DISPLAY_NAME_MAPPINGS as automation_dis
+from .node.vision import NODE_CLASS_MAPPINGS as vision_node, NODE_DISPLAY_NAME_MAPPINGS as vision_dis
+from .node.extension_bridge import NODE_CLASS_MAPPINGS as extension_node, NODE_DISPLAY_NAME_MAPPINGS as extension_dis
 
 NODE_CLASS_MAPPINGS = {
-    "SendToBackend": SendToBackend
+    **backend_node,
+    **trigger_node,
+    **status_node,
+    **webhook_node,
+    **automation_node,
+    **vision_node,
+    **extension_node
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "SendToBackend": "Send To Backend ??"
+    **backend_dis,
+    **trigger_dis,
+    **status_dis,
+    **webhook_dis,
+    **automation_dis,
+    **vision_dis,
+    **extension_dis
 }
+
+__all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS']
